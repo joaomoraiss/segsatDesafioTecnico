@@ -25,6 +25,7 @@ public class ClienteService {
         if (clienteRepository.existsByEmail(cliente.getEmail())){
             throw new IllegalArgumentException("O email já está cadastrado.");
         }
+        preencherEnderecoPorCep(cliente.getCep(), cliente);
         clienteRepository.save(cliente);
     }
 
@@ -53,6 +54,8 @@ public class ClienteService {
                 clienteRepository.existsByEmail(novosDados.getEmail())) {
             throw new IllegalArgumentException("O e-mail já está em uso por outro cliente.");
         }
+
+        preencherEnderecoPorCep(novosDados.getCep(), novosDados);
 
         clienteExistente.setNome(novosDados.getNome());
         clienteExistente.setEmail(novosDados.getEmail());
