@@ -1,9 +1,12 @@
 package com.segsat.segsat.service;
 
+import com.segsat.segsat.DTO.ViaCepResponse;
 import com.segsat.segsat.model.Cliente;
 import com.segsat.segsat.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +15,11 @@ import java.util.Optional;
 public class ClienteService {
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    private static final String VIA_CEP_URL = "https://viacep.com.br/ws/{cep}/json/";
 
     public void criarCliente(Cliente cliente) {
         if (clienteRepository.existsByEmail(cliente.getEmail())){
@@ -56,6 +64,23 @@ public class ClienteService {
         clienteExistente.setEstado(novosDados.getEstado());
 
         return clienteRepository.save(clienteExistente);
+    }
+
+    private void preencherEnderecoPorCep(String cep, Cliente cliente) {
+        ResponseEntity<ViaCepResponse> response = restTemplate.getForEntity(VIA_CEP_URL,
+                ViaCepResponse.class, cep);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            ViaCepResponse viaCepResponse = response.getBody();
+            if (viaCepResponse != null) {
+                cliente.setEndereco(viaCepResponse.getLogradouro());
+                cliente.setBairro(viaCepResponse.getBairro());
+                cliente.setCidade(viaCepResponse.getLocalidade());
+                cliente.setEstado(viaCepResponse.getEstado());
+            }
+        } else {
+            throw new RuntimeException("Falha ao buscar o endereço via API.");
+        }
     }
 
 }
